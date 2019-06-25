@@ -3,24 +3,27 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
-#include "glut.h"
+//#include "glut.h"     // Windows
+#include <OpenGL/gl.h>  // Mac OS
+#include <GLUT/glut.h>  // Mac OS
+
 
 #pragma warning (disable: 4996)
 
 struct tetrimino {
-	double color[2];
-	double mino[4][4];
+	double color[2];    // Tetrimino Colors
+	double mino[4][4];  // Tetrimino Shapes
 };
 
 struct rectangle {
-	double pos[2];
-	double size[2];
-	double color[3];
+	double pos[2];      // Top Left Vertex Coordinates
+	double size[2];     // Size
+	double color[3];    // Rectangle Color
 };
 
-//****************************global*********************************
+//****************************Global variable*********************************
 
-double field[22][12] = {  // tetris field
+double field[22][12] = {  // Tetris field
 						{ -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1 },
 						{ -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-1 },
 						{ -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-1 },
@@ -43,198 +46,198 @@ double field[22][12] = {  // tetris field
 						{ -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-1 },
 						{ -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-1 },
 						{ -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1 }
-						};
+                       };
 
-double nextfield[4][4] = {  // next mino
-						 { -1,-1,-1,-1 },
-						 { -1,-1,-1,-1 },
-						 { -1,-1,-1,-1 },
-						 { -1,-1,-1,-1 },
-						};
+double nextfield[4][4] = {  // Field that displays the next Tetorimino
+						  { -1,-1,-1,-1 },
+						  { -1,-1,-1,-1 },
+						  { -1,-1,-1,-1 },
+						  { -1,-1,-1,-1 },
+						 };
 
-// 0‹
+// 0 deg.
 double next0[7][4][4] = {
-						{  // mino1
-						 { 0,1,0,0 },
-						 { 0,1,0,0 },
-						 { 0,1,0,0 },
-						 { 0,1,0,0 },
-						},
-						{  // mino2
-						 { 0,0,0,0 },
-						 { 0,2,2,0 },
-						 { 0,2,2,0 },
-						 { 0,0,0,0 },
-						},
-						{  // mino3
-						 { 0,3,0,0 },
-						 { 0,3,3,0 },
-						 { 0,0,3,0 },
-						 { 0,0,0,0 },
-						},
-						{  // mino4
-						 { 0,0,4,0 },
-						 { 0,4,4,0 },
-						 { 0,4,0,0 },
-						 { 0,0,0,0 },
-						},
-						{  // mino5
-						 { 0,5,0,0 },
-						 { 0,5,0,0 },
-						 { 0,5,5,0 },
-						 { 0,0,0,0 },
-						},
-						{  // mino6
-						 { 0,0,6,0 },
-						 { 0,0,6,0 },
-						 { 0,6,6,0 },
-						 { 0,0,0,0 },
-						},
-						{  // mino7
-						 { 0,7,0,0 },
-						 { 0,7,7,0 },
-						 { 0,7,0,0 },
-						 { 0,0,0,0 },
-						}
-					   };
-
-// rotate 90
-double next90[7][4][4] = {
-						 {
-						  { 0,0,0,0 },
-						  { 1,1,1,1 },
-						  { 0,0,0,0 },
-						  { 0,0,0,0 },
+                         {  // Tetrimino1:I mino
+						  { 0,1,0,0 },
+						  { 0,1,0,0 },
+						  { 0,1,0,0 },
+						  { 0,1,0,0 },
 						 },
-						 {
+                         {  // Tetrimino2:O mino
 						  { 0,0,0,0 },
 						  { 0,2,2,0 },
 						  { 0,2,2,0 },
 						  { 0,0,0,0 },
 						 },
-						 {
-						  { 0,0,0,0 },
+                         {  // Tetrimino3:S mino
+						  { 0,3,0,0 },
 						  { 0,3,3,0 },
-						  { 3,3,0,0 },
+						  { 0,0,3,0 },
 						  { 0,0,0,0 },
 						 },
-						 {
-						  { 0,0,0,0 },
-						  { 4,4,0,0 },
+                         {  // Tetrimino4:Z mino
+						  { 0,0,4,0 },
 						  { 0,4,4,0 },
+						  { 0,4,0,0 },
 						  { 0,0,0,0 },
 						 },
-						  {
-						  { 0,0,0,0 },
-						  { 0,5,5,5 },
+                         {  // Tetrimino5:L mino
 						  { 0,5,0,0 },
+						  { 0,5,0,0 },
+						  { 0,5,5,0 },
 						  { 0,0,0,0 },
-	},
-	{
-		{ 0,0,0,0 },
-		{ 0,6,0,0 },
-		{ 0,6,6,6 },
-		{ 0,0,0,0 },
-	},
-	{
-		{ 0,0,0,0 },
-		{ 7,7,7,0 },
-		{ 0,7,0,0 },
-		{ 0,0,0,0 },
-	}
-};
+						 },
+                         {  // Tetrimino6:J mino
+						  { 0,0,6,0 },
+						  { 0,0,6,0 },
+						  { 0,6,6,0 },
+						  { 0,0,0,0 },
+						 },
+                         {  // Tetrimino7:T mino
+						  { 0,7,0,0 },
+						  { 0,7,7,0 },
+						  { 0,7,0,0 },
+						  { 0,0,0,0 },
+						 }
+					    };
 
-// rotate 180
+// 90 deg.
+double next90[7][4][4] = {
+						  {  // Tetrimino1:I mino
+						   { 0,0,0,0 },
+						   { 1,1,1,1 },
+						   { 0,0,0,0 },
+						   { 0,0,0,0 },
+						  },
+						  {  // Tetrimino2:O mino
+						   { 0,0,0,0 },
+						   { 0,2,2,0 },
+						   { 0,2,2,0 },
+						   { 0,0,0,0 },
+						  },
+						  {  // Tetrimino3:S mino
+						   { 0,0,0,0 },
+						   { 0,3,3,0 },
+						   { 3,3,0,0 },
+						   { 0,0,0,0 },
+					 	  },
+						  {  // Tetrimino4:Z mino
+						   { 0,0,0,0 },
+						   { 4,4,0,0 },
+						   { 0,4,4,0 },
+						   { 0,0,0,0 },
+						  },
+                          {  // Tetrimino5:L mino
+						   { 0,0,0,0 },
+						   { 0,5,5,5 },
+						   { 0,5,0,0 },
+						   { 0,0,0,0 },
+                          },
+                          {  // Tetrimino6:J mino
+                           { 0,0,0,0 },
+                           { 0,6,0,0 },
+                           { 0,6,6,6 },
+                           { 0,0,0,0 },
+                          },
+                          {  // Tetrimino7:T mino
+                           { 0,0,0,0 },
+                           { 7,7,7,0 },
+                           { 0,7,0,0 },
+                           { 0,0,0,0 },
+                          }
+                         };
+
+// 180 deg.
 double next180[7][4][4] = {
-	{
-		{ 0,1,0,0 },
-		{ 0,1,0,0 },
-		{ 0,1,0,0 },
-		{ 0,1,0,0 },
-	},
-	{
-		{ 0,0,0,0 },
-		{ 0,2,2,0 },
-		{ 0,2,2,0 },
-		{ 0,0,0,0 },
-	},
-	{
-		{ 0,3,0,0 },
-		{ 0,3,3,0 },
-		{ 0,0,3,0 },
-		{ 0,0,0,0 },
-	},
-	{
-		{ 0,0,4,0 },
-		{ 0,4,4,0 },
-		{ 0,4,0,0 },
-		{ 0,0,0,0 },
-	},
-	{
-		{ 0,0,0,0 },
-		{ 0,5,5,0 },
-		{ 0,0,5,0 },
-		{ 0,0,5,0 },
-	},
-	{
-		{ 0,0,0,0 },
-		{ 0,6,6,0 },
-		{ 0,6,0,0 },
-		{ 0,6,0,0 },
-	},
-	{
-		{ 0,7,0,0 },
-		{ 7,7,0,0 },
-		{ 0,7,0,0 },
-		{ 0,0,0,0 },
-	}
-};
+                           {  // Tetrimino1:I mino
+                            { 0,1,0,0 },
+                            { 0,1,0,0 },
+                            { 0,1,0,0 },
+                            { 0,1,0,0 },
+                           },
+                           {  // Tetrimino2:O mino
+                            { 0,0,0,0 },
+                            { 0,2,2,0 },
+                            { 0,2,2,0 },
+                            { 0,0,0,0 },
+                           },
+                           {  // Tetrimino3:S mino
+                            { 0,3,0,0 },
+                            { 0,3,3,0 },
+                            { 0,0,3,0 },
+                            { 0,0,0,0 },
+                           },
+                           {  // Tetrimino4:Z mino
+                            { 0,0,4,0 },
+                            { 0,4,4,0 },
+                            { 0,4,0,0 },
+                            { 0,0,0,0 },
+                           },
+                           {  // Tetrimino5:L mino
+                            { 0,0,0,0 },
+                            { 0,5,5,0 },
+                            { 0,0,5,0 },
+                            { 0,0,5,0 },
+                           },
+                           {  // Tetrimino6:J mino
+                            { 0,0,0,0 },
+                            { 0,6,6,0 },
+                            { 0,6,0,0 },
+                            { 0,6,0,0 },
+                           },
+                           {  // Tetrimino7:T mino
+                            { 0,7,0,0 },
+                            { 7,7,0,0 },
+                            { 0,7,0,0 },
+                            { 0,0,0,0 },
+                           }
+                          };
 
-// rotate 270
+// 270 deg.
 double next270[7][4][4] = {
-	{
-		{ 0,1,0,0 },
-		{ 0,1,0,0 },
-		{ 0,1,0,0 },
-		{ 0,1,0,0 },
-	},
-	{
-		{ 0,0,0,0 },
-		{ 0,2,2,0 },
-		{ 0,2,2,0 },
-		{ 0,0,0,0 },
-	},
-	{
-		{ 0,0,0,0 },
-		{ 0,3,3,0 },
-		{ 3,3,0,0 },
-		{ 0,0,0,0 },
-	},
-	{
-		{ 0,0,0,0 },
-		{ 4,4,0,0 },
-		{ 0,4,4,0 },
-		{ 0,0,0,0 },
-	},
-	{
-		{ 0,0,0,0 },
-		{ 0,0,5,0 },
-		{ 5,5,5,0 },
-		{ 0,0,0,0 },
-	},
-	{
-		{ 0,0,0,0 },
-		{ 0,0,0,0 },
-		{ 6,6,6,0 },
-		{ 0,0,6,0 },
-	},
-	{
-		{ 0,7,0,0 },
-		{ 7,7,7,0 },
-		{ 0,0,0,0 },
-		{ 0,0,0,0 },
-	}
-};
+                           {  // Tetrimino1:I mino
+                            { 0,1,0,0 },
+                            { 0,1,0,0 },
+                            { 0,1,0,0 },
+                            { 0,1,0,0 },
+                           },
+                           {  // Tetrimino2:O mino
+                            { 0,0,0,0 },
+                            { 0,2,2,0 },
+                            { 0,2,2,0 },
+                            { 0,0,0,0 },
+                           },
+                           {  // Tetrimino3:S mino
+                            { 0,0,0,0 },
+                            { 0,3,3,0 },
+                            { 3,3,0,0 },
+                            { 0,0,0,0 },
+                           },
+                           {  // Tetrimino4:Z mino
+                            { 0,0,0,0 },
+                            { 4,4,0,0 },
+                            { 0,4,4,0 },
+                            { 0,0,0,0 },
+                           },
+                           {  // Tetrimino5:L mino
+                            { 0,0,0,0 },
+                            { 0,0,5,0 },
+                            { 5,5,5,0 },
+                            { 0,0,0,0 },
+                           },
+                           {  // Tetrimino6:J mino
+                            { 0,0,0,0 },
+                            { 0,0,0,0 },
+                            { 6,6,6,0 },
+                            { 0,0,6,0 },
+                           },
+                           {  // Tetrimino7:T mino
+                            { 0,7,0,0 },
+                            { 7,7,7,0 },
+                            { 0,0,0,0 },
+                            { 0,0,0,0 },
+                           }
+                          };
 
 struct rectangle *newRect = NULL;
 struct tetrimino *tetri;
@@ -244,19 +247,23 @@ struct tetrimino *beforetetri;
 double posBegin[2];
 double posEnd[2];
 
+// Main processing variable
 int downcnt = 0;
 int minoIndex = 0;
 int nextminoIndex = 10;
+// Collision judgment variable
 int crash = 0;
 int rotate_flag[4] = {0};
 int right_flag = 0;
 int right2_flag = 0;
 int left_flag = 0;
 int left2_flag = 0;
+// Operation variable
 int side = 0;
 int down = 0;
 int r_side = 0;
 int r_down = 0;
+// Other variable
 int Index = 0;
 int rotation = 0;
 int speed = 300;
@@ -267,7 +274,6 @@ int push_l = 0;
 int die;
 int clear = 0;
 int key_flag = 0;
-int tmp = 0;
 
 //***************************************************************************
 
@@ -276,6 +282,7 @@ void init(void) {
     glClearColor(0.0, 0.0, 0.0, 1.0);
 }
 
+// Rectangle drawing function
 void drawRect(struct rectangle *r, int flag) {
 	glColor3d(r->color[0], r->color[1], r->color[2]);
 	if (flag == 0) {
@@ -291,19 +298,9 @@ void drawRect(struct rectangle *r, int flag) {
 	glEnd();
 }
 
+// Function to decide the next Tetrimino
 void randMino() {
 	int i, j;
-    int ran;
-	int randnum = 0;
-
-	randnum = tmp * Index % 5;
-	if (randnum == 1) {
-		speed = 50;
-	}
-	else {
-		speed = 300;
-	}
-	tmp++;
 
 	if (nextminoIndex == 10) {
 		tetri = (struct tetrimino *)malloc(sizeof(struct tetrimino));
@@ -328,7 +325,7 @@ void randMino() {
 		}
         Index = nextminoIndex;
 	}
-	srand((unsigned int)time(NULL));
+	//srand((unsigned int)time(NULL));
 	nextminoIndex = rand() % 7;
 	for (i = 0; i < 4; i++) {
 		for (j = 0; j < 4; j++) {
@@ -337,6 +334,7 @@ void randMino() {
 	}
 }
 
+// Game over judgment function
 int gameOver(){
     int i,j;
     int ded_flag = 0;
@@ -354,6 +352,7 @@ int gameOver(){
     }
 }
 
+// Drawing function
 void display(void) {
 
 	int i, j, k;
@@ -378,8 +377,10 @@ void display(void) {
 	struct rectangle *rect[22][12];
     struct rectangle *nextrect[4][4];
 
+    // Clear buffer
 	glClear(GL_COLOR_BUFFER_BIT);
 	
+    // Memory area secured
 	for (i = 0; i < 22; i++) {
 		for (j = 0; j < 12; j++) {
 			rect[i][j] = (struct rectangle *)malloc(sizeof(struct rectangle));
@@ -391,6 +392,7 @@ void display(void) {
         }
     }
     
+    // Create Tetris Field
 	for (i = 0; i < 22; i++) {
 		for (j = 0; j < 12; j++) {
 			rect[i][j]->pos[0] = pos0;
@@ -424,7 +426,8 @@ void display(void) {
             }
         }
     }
-
+    
+    // Coloring in tetris field
 	for (i = 0; i < 22; i++) {
 		for (j = 0; j < 12; j++) {
 			if (field[i][j] == -1) {
@@ -542,7 +545,7 @@ void display(void) {
             }
         }
     }
-    
+    // Call function drawRect()
 	for (i = 0; i < 22; i++) {
 		for (j = 0; j < 12; j++) {
 			drawRect(rect[i][j],flag[i][j]);
@@ -554,7 +557,7 @@ void display(void) {
             drawRect(nextrect[i][j],n_flag[i][j]);
         }
     }
-
+    // Character drawing
     sprintf(str1 , " NEXT ");
     glColor3f(1.0, 1.0, 1.0);
     glRasterPos2f(0.1125,0.75);
@@ -637,10 +640,12 @@ void display(void) {
     
     glFlush();
 
+    // Double buffer exchange
 	glutSwapBuffers();
 
 }
 
+// Function that clears one or more lines of tetrimino
 void delMino() {
     int i,j,k;
     int del_cnt[22] = {0};
@@ -665,6 +670,7 @@ void delMino() {
                 score += 200;
             }
             score += 100;
+            // Raise the difficulty
             if(score >= 1000) {
                 level += 1;
             }
@@ -692,6 +698,7 @@ void delMino() {
     }
 }
 
+// Drop tetrimino at regular intervals
 void updatePos(int value) {
 	int i,j;
 	int crash_flag = 0;
@@ -699,6 +706,7 @@ void updatePos(int value) {
     push_r = 0;
     push_l = 0;
     
+    // Remove a previously drawn tetrimino
 	if (downcnt > 0) {
 		for (i = (1 + downcnt); i <= (4 + downcnt); i++) {
 			for (j = 4; j <= 7; j++) {
@@ -709,7 +717,7 @@ void updatePos(int value) {
 		}
 	}
 
-	// field update check
+	// Check if the field can be update
 	for (i = (1 + downcnt); i <= (4 + downcnt); i++) {
 		for (j = 4; j <= 7; j++) {
 			if (field[i + 1][j + side] != 0 && tetri->mino[i - downcnt - 1][j - 4] > 0) {
@@ -718,7 +726,7 @@ void updatePos(int value) {
 		}
 	}
     
-    // right or left check
+    // Check if Tetrimino can move left and right
     right_flag = 0;
     left_flag = 0;
     right2_flag = 0;
@@ -740,7 +748,7 @@ void updatePos(int value) {
         }
     }
     
-    // rotate check
+    // Check if Tetrimino can rotation
     for (i = 0; i < 4; i++) {
         rotate_flag[i] = 0;
     }
@@ -761,7 +769,7 @@ void updatePos(int value) {
         }
     }
     
-	// field update
+	// Update field status
 	for (i = (1 + downcnt); i <= (4 + downcnt); i++) {
 		for (j = 4; j <= 7; j++) {
 			if (field[i][j + side] == 0) {
@@ -786,7 +794,7 @@ void updatePos(int value) {
         }
 		side = 0;
 		rotation = 0;
-		// game clear check
+		// Game clear judgment
 		if (level >= 5) {
 			clear = 1;
 			glutDisplayFunc(display);
@@ -933,15 +941,15 @@ void keyUp(int key, int x, int y) {
 
 int main(int argc, char *argv[]) {
 
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGBA);
+	glutInit(&argc, argv);             // Initialize GLUT library
+	glutInitDisplayMode(GLUT_RGBA);    // Set display mode
 	glutInitWindowSize(640, 640);
-	glutCreateWindow(argv[0]);
+	glutCreateWindow(argv[0]);         // Create window
 	randMino();
 	glutSpecialFunc(keyboard);
 	glutKeyboardFunc(keyboard2);
 	glutSpecialUpFunc(keyUp);
-	glutDisplayFunc(display);
+	glutDisplayFunc(display);          // Specify a function to draw the screen
 	glutTimerFunc(speed, updatePos, 0);
 
 	init();
