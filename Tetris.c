@@ -7,7 +7,6 @@
 #include <OpenGL/gl.h>  // Mac OS
 #include <GLUT/glut.h>  // Mac OS
 
-
 #pragma warning (disable: 4996)
 
 struct tetrimino {
